@@ -1,0 +1,30 @@
+FROM alpine:3.4
+
+MAINTAINER wuhan <wuhan@xindong.com>
+
+ENV GOROOT=/usr/lib/go GOPATH=/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+
+COPY . /go/src/github.com/pingcap/tidb
+
+
+RUN sed -i -e s'/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/' /etc/apk/repositories && \
+    apk update && \
+    apk add go make git && \
+    rm -rf /var/cache/apk/* && \
+    mkdir -p /go/bin && \
+    cd /go/src/github.com/pingcap/tidb && \
+    make parser && make server && \
+    mv tidb-server/tidb-server /tidb-server && \
+    make clean && \
+    cd / && \ 
+    rm -rf /go/src && \
+    apk del go make git
+
+# RUN addgroup -g 10007 tidb && adduser -h /dev/null -D -s /sbin/nologin -H -G tidb -u 10007 tidb
+
+# USER tidb
+
+EXPOSE 4000
+
+ENTRYPOINT ["/tidb-server"]
